@@ -1,0 +1,192 @@
+
+======================================================
+For running the ec2 instance to expose api to browser:
+1.create ec2 instance with amazon linux t3 micro.
+  a.create inbound rule in security group to allow custom tcp to laptop ip address.
+	sgr-0fb2df6e0de7c93f3
+	IPv4
+	Custom TCP
+	TCP
+	8080
+	49.206.117.247/32 (myip)
+	–
+2.=======create docker image latest=======
+3.=======Install Java 11=======
+4.=======gradle steps latest=======
+5.docker build -t spring-hello-world . (running without last "." will cause errors)
+6.docker run -p 8080:8080 spring-hello-world
+==========================================
+create docker image of sample application old version (outdated)
+# Connect to EC2
+ssh -i /path/to/your-key.pem ec2-user@<EC2_PUBLIC_IP>
+
+# Update and install Docker & Git
+sudo yum update -y
+sudo amazon-linux-extras install docker -y
+sudo service docker start
+sudo usermod -aG docker ec2-user
+newgrp docker
+sudo yum install git -y
+
+# Clone repo and build Docker image
+git clone <YOUR_REPO_URL>
+cd <YOUR_PROJECT_FOLDER>
+docker build -t spring-hello-world .
+
+# (Optional) Run container
+docker run -p 8080:8080 spring-hello-world
+
+==========================================
+create docker image of sample application (outdated)
+
+# 1. Connect to EC2
+ssh -i /path/to/key.pem ec2-user@<EC2_PUBLIC_IP>
+
+# 2. Install Docker & Git
+sudo yum update -y
+sudo amazon-linux-extras install docker -y
+sudo service docker start
+sudo usermod -aG docker ec2-user
+newgrp docker
+sudo yum install git -y
+
+# 3. Install Gradle (if not present)
+sudo yum install java-11-openjdk-devel -y
+sudo wget https://services.gradle.org/distributions/gradle-7.6-bin.zip
+sudo unzip gradle-7.6-bin.zip -d /opt/gradle
+export PATH=$PATH:/opt/gradle/gradle-7.6/bin
+
+# 4. Clone your repo
+git clone <YOUR_REPO_URL>
+cd <YOUR_PROJECT_FOLDER>
+
+# 5. Build the JAR
+./gradlew build
+
+# 6. Build Docker image
+docker build -t spring-hello-world .
+
+# 7. Run Docker container
+docker run -p 8080:8080 spring-hello-world
+
+==========================================
+
+=======user data to be used:=======
+
+#!/bin/bash
+# Update system
+dnf update -y
+
+# Install Docker
+dnf install -y docker
+systemctl start docker
+systemctl enable docker
+
+# Add ec2-user to docker group
+usermod -aG docker ec2-user
+
+# Install Git
+dnf install -y git
+
+# Install Java 17 (Amazon Corretto)
+#dnf install -y java-17-amazon-corretto
+dnf install java-11-amazon-corretto -y
+
+# Install unzip (required for Gradle)
+dnf install -y unzip
+
+# Install Gradle manually
+GRADLE_VERSION=7.6
+wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip -P /tmp
+unzip -d /opt/gradle /tmp/gradle-${GRADLE_VERSION}-bin.zip
+
+# Set up Gradle environment variable for all users
+echo "export PATH=\$PATH:/opt/gradle/gradle-${GRADLE_VERSION}/bin" >> /etc/profile.d/gradle.sh
+chmod +x /etc/profile.d/gradle.sh
+
+# Source the gradle path for the current session
+export PATH=$PATH:/opt/gradle/gradle-${GRADLE_VERSION}/bin
+
+# Print versions for verification
+docker --version
+git --version
+java -version
+gradle -v
+
+
+=================================
+=======create docker image latest:=======
+# Update and install Docker
+sudo dnf update -y
+sudo dnf install docker -y
+
+# Start and enable Docker
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Add user to docker group
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Install Git
+sudo dnf install git -y
+
+# (Optional) Install Java and Gradle if needed
+#sudo dnf install java-11-openjdk-devel -y
+#sudo dnf install gradle -y
+
+# Clone your repo and build
+#git clone <YOUR_REPO_URL>
+#cd <YOUR_PROJECT_FOLDER>
+#./gradlew build
+
+# Build Docker image
+#docker build -t spring-hello-world .
+
+# Run Docker container
+#docker run -p 8080:8080 spring-hello-world
+
+===========================================
+=======Install Java 11=======
+sudo dnf install java-11-amazon-corretto -y
+# or
+#sudo dnf install java-11-openjdk -y(not working)
+
+# Verify installations
+java -version
+#gradle -v
+
+# Continue with your workflow
+#git clone <YOUR_REPO_URL>
+#cd <YOUR_PROJECT_FOLDER>
+#./gradlew build(not working)
+#gradle build
+#docker build -t spring-hello-world .
+#docker run -p 8080:8080 spring-hello-world
+
+===================================
+=======gradle steps latest=======
+# Download and install Gradle
+wget https://services.gradle.org/distributions/gradle-7.6-bin.zip -O gradle-7.6-bin.zip
+sudo mkdir /opt/gradle
+sudo unzip gradle-7.6-bin.zip -d /opt/gradle
+echo 'export PATH=$PATH:/opt/gradle/gradle-7.6/bin' >> ~/.bashrc
+source ~/.bashrc
+
+# Verify Gradle
+gradle -v
+
+# Continue with your workflow
+git clone -b master https://github.com/Suriyams3/spring-hello-world.git
+cd spring-hello-world
+#git clone <YOUR_REPO_URL>
+#cd <YOUR_PROJECT_FOLDER>
+#./gradlew build(not working)
+gradle build
+#docker build -t spring-hello-world .
+#docker buildx build -t spring-hello-world .
+#docker run -p 8080:8080 spring-hello-world
+#docker ps
+#docker stop <container-id>
+
+

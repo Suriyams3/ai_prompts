@@ -1,0 +1,196 @@
+Absolutely — let's walk through the updated and complete steps to deploy a Spring Boot + Gradle + Java 11 application on an Amazon Linux 2 EC2 instance using Docker, with the source code pulled from GitHub.
+
+✅ Summary
+
+You’ll:
+
+Create a Spring Boot app (Gradle, Java 11)
+
+Write a Dockerfile (multi-stage)
+
+Push the code to GitHub
+
+Launch an Amazon Linux 2 EC2 instance
+
+Install Docker + Git
+
+Clone your repo and build the Docker image
+
+Run the app container
+
+Open port 8080 in EC2 security group
+
+Access the API from browser/Postman
+
+📁 1. Spring Boot App Structure (Gradle + Java 11)
+HelloController.java
+@RestController
+public class HelloController {
+    @GetMapping("/")
+    public String hello() {
+        return "Hello world";
+    }
+}
+
+build.gradle
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '2.7.0'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+settings.gradle
+rootProject.name = 'spring-hello'
+
+🐳 2. Dockerfile (for Gradle + Java 11)
+
+Create this Dockerfile in your project root:
+
+# Build stage
+FROM gradle:7.4.2-jdk11 AS build
+WORKDIR /app
+COPY . .
+RUN gradle bootJar --no-daemon
+
+# Runtime stage
+FROM openjdk:11-jre-slim
+WORKDIR /app
+COPY --from=build /app/build/libs/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+
+💡 No need to build JAR manually — Docker does it during the build.
+
+☁️ 3. Push Code to GitHub
+
+Make sure your GitHub repo includes:
+
+src/ folder
+
+build.gradle, settings.gradle
+
+Dockerfile
+
+🖥️ 4. Launch EC2 Instance (Amazon Linux 2)
+
+In the AWS Console:
+
+AMI: Amazon Linux 2 (64-bit x86)
+
+Instance Type: t2.micro (Free Tier)
+
+Key Pair: Select or create a new one
+
+Security Group: Allow:
+
+SSH (port 22)
+
+HTTP (port 80) – optional
+
+Custom TCP on port 8080 (for your API)
+
+🔑 5. SSH Into EC2 Instance
+chmod 400 your-key.pem
+ssh -i "your-key.pem" ec2-user@<your-ec2-public-ip>
+
+🐳 6. Install Docker + Git on Amazon Linux 2
+
+Run these commands:
+
+# Update system
+sudo yum update -y
+
+# Install Docker
+sudo amazon-linux-extras install docker -y
+sudo service docker start
+sudo usermod -a -G docker ec2-user
+
+# Install Git
+sudo yum install git -y
+
+# Apply group changes (or log out and back in)
+newgrp docker
+
+
+✅ Confirm Docker is working:
+
+docker --version
+
+🔁 7. Clone Your GitHub Repo
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>
+
+🛠️ 8. Build Docker Image
+docker build -t spring-hello .
+
+🚀 9. Run the Docker Container
+docker run -d -p 8080:8080 spring-hello
+
+
+✅ Check it's running:
+
+docker ps
+
+🔓 10. Open Port in Security Group
+
+If not done already:
+
+Go to AWS Console → EC2 → Security Groups
+
+Edit the group attached to your instance
+
+Add an inbound rule:
+
+Type: Custom TCP
+
+Port: 8080
+
+Source: 0.0.0.0/0 (or your IP for security)
+
+🌍 11. Test in Browser/Postman
+
+Go to:
+
+http://<your-ec2-public-ip>:8080/
+
+
+You should see:
+
+Hello world
+
+🧹 Optional: .dockerignore
+
+Create a .dockerignore file to speed up build:
+
+.gradle
+build
+*.class
+*.log
+*.iml
+.idea
+
+✅ Final Tips
+
+Persistence: This setup is simple — but on EC2 reboot, container won’t restart. Consider using a process manager or docker restart policy.
+
+Security: Avoid exposing ports to all IPs in production.
+
+Automation: You can automate all steps using a shell script or EC2 User Data.

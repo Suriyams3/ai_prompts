@@ -55,3 +55,88 @@ Scheduled Job: An AWS EventBridge rule or Glue Workflow is set to run the proces
 Versioning/CI/CD: The Spark Scala code for score calculation and API interaction is managed in GitHub, with GitHub Actions ensuring that any code change is automatically built, tested, and deployed to the Glue environment.
 
 AWS Components: All infrastructure and services for data storage, processing, and orchestration are managed on AWS.
+
+
+=====================================================
+cost:
+
+The monthly cost for this setup is highly dependent on the execution time of the two AWS Glue Spark jobs. Since the data volume (10,000 records daily) is very small, the cost will be dominated by the minimum billing duration of the Glue jobs rather than the actual compute time.
+
+Here is a detailed breakdown with cost assumptions (using US East/N. Virginia pricing for estimates).
+
+1. AWS Glue Costs (Dominant Factor)
+AWS Glue is billed per Data Processing Unit (DPU)-Hour, with a minimum charge. For Spark jobs (using a modern Glue version ≥2.0):
+
+Cost per DPU-Hour: ≈$0.44
+
+Minimum Billing Duration: 1 minute per job run.
+
+Minimum DPUs: You can configure a minimum of 2 DPUs (G.1X worker type) to run Spark.
+
+Assumptions for Calculation:
+Job DPUs: 2 DPUs (minimum size for a Spark job).
+
+Job Execution Time (Actual): Likely less than 1 minute due to the small data size. We will use the 1-minute minimum billing.
+
+Runs per Month: 30 days/month.
+
+Component	Calculation	Cost per Run	Monthly Cost (30 Runs)
+Glue Job 1 (Parquet to CSV)	2 DPU× 
+60 min/hr
+1 min
+​
+ ×$0.44/DPU-hr	≈$0.0147	≈$0.44
+Glue Job 2 (CSV to API POST)	2 DPU× 
+60 min/hr
+1 min
+​
+ ×$0.44/DPU-hr	≈$0.0147	≈$0.44
+TOTAL Glue Compute	-	-	≈$0.88
+
+Export to Sheets
+
+=====================================================================
+
+Yes, you absolutely can implement this entire data processing setup using only Amazon EC2 and Amazon S3, and in fact, it was a very common approach before serverless options like AWS Glue became prevalent.
+
+However, implementing it this way is not the minimum cost solution and will involve significantly more operational overhead.
+
+Solution with EC2 and S3 Only
+The core idea is to run the entire Spark environment on a single, or a small cluster of, EC2 instances.
+
+1. Data Storage and Artifacts
+Component	EC2/S3 Implementation	Note
+Input/Output Storage	Amazon S3 (Two Buckets)	Same as the Glue solution. Used for the Parquet file, CSV output, and Spark application JAR files.
+
+Export to Sheets
+2. Spark Compute and Processing
+Component	EC2/S3 Implementation	Operational Overhead
+Spark Environment	A single, small Amazon EC2 instance (e.g., a burstable t3.medium or a memory-optimized m6i.large)	Requires manual installation and configuration of Java, Scala, Apache Spark, and Hadoop AWS libraries.
+Application Execution	A shell script on the EC2 instance runs the Spark jobs using spark-submit.	The instance must be running for the job to execute. You pay for the instance 24/7 unless you automate its start/stop.
+Scheduler	Cron job configured on the EC2 instance's operating system.	This is an instance-level configuration and requires maintenance and monitoring.
+
+Export to Sheets
+3. CI/CD and Deployment (GitHub Actions)
+Component	EC2/S3 Implementation	Note
+Deployment	GitHub Actions compiles the Spark JAR and uploads it to S3.	Same as the Glue solution.
+Code Trigger	A shell script on the EC2 instance checks S3 for the new JAR or is triggered externally via AWS Systems Manager (SSM) Run Command which initiates the cron or spark-submit process.	
+
+Export to Sheets
+Cost Comparison: EC2 vs. AWS Glue (The Trade-off)
+The biggest difference is in how you pay for compute resources.
+
+Feature	AWS Glue (Serverless)	EC2 (Self-Managed)
+Pricing Model	Pay-per-use (minimum 1 minute billable time).	Fixed monthly cost for the instance, whether it's processing data or idle.
+Instance Type	Serverless: automatically scales DPUs.	Must choose an instance size (e.g., t3.medium).
+Monthly Compute	≈$1 - $5 (based on ∼5 total min/day).	≈$30 - $70 (for a small instance running 24/7).
+Operational Overhead	Low. AWS manages patching, scaling, and Spark environment setup.	High. You are responsible for OS updates, Spark and Hadoop configuration, failure handling, and instance monitoring.
+
+Export to Sheets
+Conclusion on Cost
+While you can use EC2, it will be the most expensive option for a small, scheduled, short-running job:
+
+EC2 Cost: Even a small EC2 instance running 24/7 (e.g., a t3.medium in US-East) costs ∼$30 per month.
+
+Glue Cost: The minimum Glue charge for the same job is only ∼$1 - $5 per month.
+
+Recommendation: For a daily, fixed-schedule job with minimal data volume (10,000 records), AWS Glue remains the superior and minimum-cost solution. The EC2 approach is overkill and incurs significant idle compute cost.

@@ -1,0 +1,39 @@
+docker pull wiremock/wiremock:latest
+docker run -d --name wiremock -p 8081:8080 wiremock/wiremock:latest
+docker run -d --name spring-app -p 8080:8080 my-spring-app
+
+to remove:
+docker rm wiremock
+
+curl -X POST http://localhost:8081/__admin/mappings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "request": {
+      "method": "GET",
+      "url": "/india"
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"message\":\"Hello India\"}"
+    }
+  }'
+
+curl -X POST http://localhost:8081/__admin/mappings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "request": {
+      "method": "GET",
+      "url": "/dubai"
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"message\":\"Hello Dubai\"}"
+    }
+  }'
+
