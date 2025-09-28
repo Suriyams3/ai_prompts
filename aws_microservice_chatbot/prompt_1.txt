@@ -1,0 +1,9 @@
+I am planning to do a project with the below specifications.
+There are 5 microservices connected as a workflow. 
+All 5 are deployed in aws environment (most effective service to support this can be considered.)
+One of the microservice acts as a gateway for the entire architecture.
+This gateway receives 30 different types of requests(in JSON format).
+Each type of request will have different combination of request attributes and will initiate a unique flow throughout the microservices architecture.
+I would like to feed design details as documents into a knowledge base.
+I also want to create a API which will take the json payload as input and connects with AWS bedrock to fetch the details from the knowledge base and compare with the request Json to generate a description of how the request would behave in the microservices architecture end to end.
+can you give me a real time example of the above use case along with the steps required on a high level and what will be the cost for implementing this?
