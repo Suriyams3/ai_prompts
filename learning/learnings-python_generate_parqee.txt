@@ -1,0 +1,33 @@
+docker pull python:3.11
+
+docker run -it python:3.11 bash
+
+pip install pandas
+
+pip install pyarrow
+
+python -c "import pandas as pd, pyarrow as pa; print('pandas:', pd                                                                              .__version__, '| pyarrow:', pa.__version__)"
+
+ apt update && apt install nano
+
+cd tmp
+nano app.py
+(write code, then ctrl+s to save then ctrl+x to close)
+
+python app.py
+
+chmod 777 daily_user_activity_20250927.parquet
+
+duplicate session of ec2-user and run below command to copy 
+ docker cp 803d3ac8e0d3:/tmp/daily_user_activity_20250927.parquet /home/ec2-user/
+
+sudo yum install git -y
+
+git remote set-url origin https://<your-username>:<your-token>@github.com/<your-username>/<your-repo>.git
+(username: Suriyams3)
+git clone 
+git add 
+git commit 
+git push
+
+
