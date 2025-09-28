@@ -1,0 +1,5 @@
+1.I want to run a spring boot hello world application in aws ec2. when I call the api from public internet I should get response "Hello world". And I want to install docker in the ec2 instance and pull the code base from github into the ec2 instance and then build docker image of the application and run it. Also I want to use gradle for build and jdk version 11.The ec2 instance should have amazon linux as the OS. what are the steps to be followed to achieve this?
+
+2. I want to create an ec2 instance, with docker image to run wiremock server exposed to port 8081 and my spring boot application exposed to port 8080. I want to allow calls from my ip for both applications. what are the steps?
+
+3. I want to build a zuul based api gateway servlet application that uses jdk11, gradle, jetty server. this application should redirect calls to 2 different APIs based on the request it receives.what are the steps?

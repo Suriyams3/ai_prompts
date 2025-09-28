@@ -1,0 +1,15 @@
+I am planning to build a data processing architecture with below details
+
+1. There is a parqee file that is uploaded to s3 bucket everyday at fixed time. The file contains some 10000 records.
+
+2. I need to run a spark scala application that takes the data from parqee file as input and does some transformations using spark scala code and creates a csv file and uploads it into another s3 bucket.
+
+3. I need another application written in spark and scala that takes the csv file  as input and prepares a POST request from each record of that file and executes POST call to a backend rest API that accepts a json payload as input.
+
+4. I want this job to run everyday with scheduler configured.
+
+5. For the spark scala applications I need github repository as versioning tool and github actions to be used to build and deploy.
+
+6. For all other components of this project I would like to use AWS.
+
+Create a solution for this with minimum cost? Also can you come up with a real time use case that matches the above requirements?
