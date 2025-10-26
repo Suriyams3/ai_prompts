@@ -1,1 +1,135 @@
 I saw a python project which uses natural language processing to convert prompt into sqlquery and executes it on a sql db and returns the query response. this project uses sqlite3, google generative ai package, streamlit. here there were 2 files created namely sql.py and app.py. The main driver of this project is the app.py which configures streamlit and on submit, it calls the AI model and DB behind the scenes. The sql.py contains logic to create new DB and table and then insert some records into the table. The command that was used to run was streamlit app.py. Once the command is ran, the ui got loaded and when I pass the prompt as input it returns valid response. I am not able to find out how sql.py file is invoked. will you be able to explain?
+
+Perfect — this is a smart idea 💡.
+You can absolutely replace Google’s Generative AI package with an AWS-powered AI model and keep everything else (Streamlit + SQLite + UI) almost identical.
+
+Let’s go step-by-step so you know your options, the code changes, and cost considerations.
+
+🧩 Current architecture (today)
+
+You have:
+
+Streamlit UI  →  Google Generative AI (NLP → SQL)  →  SQLite DB
+
+
+You want:
+
+Streamlit UI  →  AWS AI model (NLP → SQL)  →  SQLite DB
+
+🧠 Step 1. Choose your AWS model
+
+AWS offers multiple ways to get generative / text-processing capability:
+
+AWS Service	Description	Good For
+Amazon Bedrock	Unified interface to multiple foundation models (Anthropic Claude, Mistral, Amazon Titan, etc.)	Text → SQL, chatbots, summarization
+Amazon Comprehend	Pre-trained NLP (sentiment, key phrases, entities)	Simpler NLP, not for prompt → SQL
+SageMaker JumpStart	Bring-your-own model or hosted open models	Custom / advanced setups
+
+👉 Recommendation: Use Amazon Bedrock — it’s the easiest and most direct equivalent to Google’s Generative AI API.
+
+🧰 Step 2. Enable and configure Bedrock
+
+Go to the AWS Management Console → Amazon Bedrock.
+
+Enable model access (choose one or more foundation models, e.g. Anthropic Claude 3 Sonnet or Amazon Titan Text).
+
+Create an IAM user or role with permissions for:
+
+bedrock:InvokeModel
+bedrock:InvokeModelWithResponseStream
+
+
+Get AWS credentials (Access Key ID & Secret Access Key) for that user.
+
+⚙️ Step 3. Install dependencies
+
+In your EC2 / development environment:
+
+pip install boto3 streamlit sqlite3
+
+
+(Bedrock uses boto3 — the standard AWS SDK for Python.)
+
+💻 Step 4. Replace model invocation code
+Old code (Google GenAI)
+from google import generativeai as genai
+
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+model = genai.GenerativeModel("gemini-pro")
+
+response = model.generate_content(f"Convert to SQL: {prompt}")
+sql_query = response.text
+
+New code (AWS Bedrock + boto3)
+import boto3
+import json
+import os
+
+# Connect to AWS Bedrock
+bedrock = boto3.client(
+    service_name="bedrock-runtime",
+    region_name="us-east-1",  # or whichever region supports your model
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+)
+
+prompt_text = f"Convert this user request into a valid SQL query: {prompt}"
+
+# Choose a model — e.g., Anthropic Claude 3 Sonnet
+model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
+
+body = {
+    "messages": [
+        {"role": "user", "content": [{"type": "text", "text": prompt_text}]}
+    ],
+    "max_tokens": 300,
+    "temperature": 0.2
+}
+
+response = bedrock.invoke_model(
+    modelId=model_id,
+    body=json.dumps(body)
+)
+
+# Parse the response
+response_body = json.loads(response["body"].read())
+sql_query = response_body["content"][0]["text"]
+
+
+Then use your existing SQLite logic:
+
+conn = sqlite3.connect("data.db")
+result = conn.execute(sql_query).fetchall()
+st.write(result)
+conn.close()
+
+
+✅ No UI or Streamlit changes required — just replace the Google GenAI code block with the Bedrock call.
+
+🧾 Step 5. Update your requirements.txt
+streamlit
+boto3
+sqlite3
+
+
+(You can remove the google-generativeai dependency.)
+
+💰 Step 6. Cost
+
+AWS Bedrock pricing varies by model:
+
+Model	Typical cost per 1K input/output tokens
+Claude 3 Sonnet	~$0.003–$0.015
+Amazon Titan Text	~$0.001–$0.004
+
+You can stay very cheap by using small prompts and local SQLite.
+
+💡 Tip: You can test Bedrock for free initially — many AWS accounts get trial access credits or free usage tiers for Bedrock when first activated.
+
+✅ Summary of changes
+Area	Before	After
+Model	Google Generative AI	Amazon Bedrock (Claude or Titan)
+Library	google-generativeai	boto3
+Auth	GOOGLE_API_KEY	AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+Code	model.generate_content()	bedrock.invoke_model()
+Cost	Pay-per-token (Google)	Pay-per-token (AWS)
